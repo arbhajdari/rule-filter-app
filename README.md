@@ -31,9 +31,12 @@ cd server && npx prisma migrate dev
 ### 2. Run the App
 
 I recommend running these in two separate terminals:
-
-Server:
+**Server:**
+```bash
 cd server && npm install && npm run dev
-
+```
 Client:
+```bash
 cd client && npm install && npm run dev
+```
+
