@@ -1,0 +1,5 @@
+{
+  "name": "@rule-filter/shared",
+  "version": "1.0.0",
+  "description": "Shared TypeScript types used by both the server and client packages."
+}

@@ -1,0 +1,50 @@
+// ─── Database Configuration ──────────────────────────────────────────────────
+// Using PostgreSQL to take advantage of native ENUM types and production-grade 
+// reliability. This ensures our MatchType and ActionType are validated at the 
+// database level, not just in the application logic.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum MatchType {
+  contains
+  startsWith
+  exact
+}
+
+enum ActionType {
+  highlight
+  tooltip
+}
+
+// ─── Rule Model ───────────────────────────────────────────────────────────────
+
+model Rule {
+  id         Int        @id @default(autoincrement())
+  keyword    String     
+  matchType  MatchType
+  actionType ActionType
+
+  // Fields for specific action payloads. 
+  // Validation for these (e.g., color for highlights) is enforced 
+  // by Zod at the API layer.
+  color      String?    
+  label      String?    
+
+  // Operational fields for feature toggling and sorting.
+  isEnabled  Boolean    @default(true)
+  priority   Int        @default(0)
+
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@map("rules")
+}

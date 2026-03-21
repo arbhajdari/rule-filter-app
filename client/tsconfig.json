@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler-specific resolution to handle modern package exports */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+
+    /* Type-checking only; Vite handles the build/emit */
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "baseUrl": ".",
+    
+    "paths": {
+      /* Syncs with the alias defined in vite.config.ts */
+      "@rule-filter/shared": ["../shared/src/index.ts"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["node_modules"]
+}
