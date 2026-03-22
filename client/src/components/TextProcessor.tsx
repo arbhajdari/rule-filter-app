@@ -172,7 +172,7 @@ function SegmentSpan({ segment }: { segment: TextSegment }) {
   // 16% opacity (28 hex) ensures the highlight is a subtle tint.
   const highlightedSpan = highlightMatch ? (
     <mark
-      className="rounded-[3px] px-0.5 font-medium not-italic"
+      className="rounded-[3px] py-0.5 font-medium not-italic"
       style={{
         backgroundColor: `${highlightMatch.color}28`,
         color: darkenHex(highlightMatch.color),

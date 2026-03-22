@@ -56,10 +56,11 @@ function findRawMatches(text: string, rules: Rule[]): RawMatch[] {
 
     let m: RegExpExecArray | null;
     while ((m = pattern.exec(text)) !== null) {
-      results.push({ start: m.index, end: m.index + m.length, rule });
+      // m[0] is the matched string; m.length would be the capture-group count
+      results.push({ start: m.index, end: m.index + m[0].length, rule });
 
-      // Prevents infinite loops if a regex theoretically matches a zero-length string
-      if (m.length === 0) pattern.lastIndex++;
+      // Prevents infinite loops on zero-length matches (e.g. empty keyword edge case)
+      if (m[0].length === 0) pattern.lastIndex++;
     }
   }
 
@@ -94,8 +95,12 @@ function buildSegments(text: string, rawMatches: RawMatch[]): TextSegment[] {
     // Check which raw matches fully cover this specific slice
     const covering = rawMatches
       .filter((m) => m.start <= segStart && m.end >= segEnd)
-      // Sort by priority so the frontend knows which style should take precedence
-      .sort((a, b) => b.rule.priority - a.rule.priority);
+      // Primary sort: higher priority wins. Tie-break: longer keyword is more specific.
+      .sort((a, b) => {
+        const byPriority = b.rule.priority - a.rule.priority;
+        if (byPriority !== 0) return byPriority;
+        return b.rule.keyword.length - a.rule.keyword.length;
+      });
 
     const matches: RuleMatch[] = covering.map((m): RuleMatch => {
       if (m.rule.actionType === 'highlight') {
@@ -118,7 +123,32 @@ function buildSegments(text: string, rawMatches: RawMatch[]): TextSegment[] {
     segments.push({ text: text.slice(segStart, segEnd), matches });
   }
 
-  return segments;
+  // 3. Merge adjacent segments that carry identical rule coverage.
+  //    This collapses painting artefacts like ['i','mmed','i','ately'] → ['immediately']
+  //    when every sub-slice was covered by the exact same set of rules.
+  const merged: TextSegment[] = [];
+  for (const seg of segments) {
+    const prev = merged[merged.length - 1];
+    if (prev && sameMatches(prev.matches, seg.matches)) {
+      prev.text += seg.text;
+    } else {
+      merged.push({ text: seg.text, matches: seg.matches });
+    }
+  }
+
+  return merged;
+}
+
+/**
+ * Returns true when two RuleMatch arrays represent the exact same coverage:
+ * same length, same ruleIds in the same order.
+ */
+function sameMatches(a: RuleMatch[], b: RuleMatch[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i].ruleId !== b[i].ruleId) return false;
+  }
+  return true;
 }
 
 // --- Public API ---

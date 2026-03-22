@@ -28,26 +28,35 @@ export async function getEnabledRules() {
 // ─── Mutations ────────────────────────────────────────────────────────────────
 
 export async function createRule(data: CreateRuleInput) {
-  return prisma.rule.create({
-    data: {
-      keyword:    data.keyword,
-      matchType:  data.matchType,
-      actionType: data.actionType,
-      // Explicitly null-out unused payload fields based on the actionType.
-      color:      data.actionType === 'highlight' ? data.color : null,
-      label:      data.actionType === 'tooltip'   ? data.label : null,
-      priority:   data.priority ?? 0,
-    },
-  });
+  try {
+    return await prisma.rule.create({
+      data: {
+        keyword:    data.keyword,
+        matchType:  data.matchType,
+        actionType: data.actionType,
+        // Explicitly null-out unused payload fields based on the actionType.
+        color:      data.actionType === 'highlight' ? data.color : null,
+        label:      data.actionType === 'tooltip'   ? data.label : null,
+        priority:   data.priority ?? 0,
+      },
+    });
+  } catch (err) {
+    if (isPrismaP2002(err)) {
+      throw new HttpError(409, `A rule with keyword "${data.keyword}" and the same configuration already exists.`);
+    }
+    throw err;
+  }
 }
 
 export async function updateRule(id: number, data: UpdateRuleInput) {
   try {
     return await prisma.rule.update({ where: { id }, data });
   } catch (err) {
-    // Map Prisma's "Record not found" error to a standard 404 HttpError
     if (isPrismaP2025(err)) {
       throw new HttpError(404, `Rule with id ${id} not found`);
+    }
+    if (isPrismaP2002(err)) {
+      throw new HttpError(409, `Another rule with that keyword configuration already exists.`);
     }
     throw err;
   }
@@ -66,16 +75,21 @@ export async function deleteRule(id: number) {
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 
-/**
- * Identifies Prisma's P2025 error (Record not found).
- * Checking the 'code' property is more resilient to Prisma version 
- * changes than importing internal error classes.
- */
-function isPrismaP2025(err: unknown): boolean {
+function isPrismaCode(err: unknown, code: string): boolean {
   return (
     typeof err === 'object' &&
     err !== null &&
     'code' in err &&
-    (err as { code: string }).code === 'P2025'
+    (err as { code: string }).code === code
   );
+}
+
+/** Prisma P2025 — record not found (e.g. update/delete on missing id). */
+function isPrismaP2025(err: unknown): boolean {
+  return isPrismaCode(err, 'P2025');
+}
+
+/** Prisma P2002 — unique constraint violation. */
+function isPrismaP2002(err: unknown): boolean {
+  return isPrismaCode(err, 'P2002');
 }
