@@ -4,6 +4,7 @@ A full-stack tool for highlighting and labeling text based on custom rules. I bu
 
 ## The Core Logic: Interval Painting
 Instead of simple string replacement, I implemented an **Interval Painting** algorithm in `textProcessorService.ts`. 
+if two rules have the same priority, the Longest Match wins to ensure the most specific rule is displayed.
 
 The engine:
 1. **Extracts Boundaries**: Identifies all start/end points of every rule match.
@@ -17,6 +18,7 @@ This approach prevents "broken" HTML tags and handles overlapping highlights (e.
 * **Backend**: Node.js/Express, Prisma, PostgreSQL.
 * **Frontend**: React, Tailwind CSS, Vite.
 * **Safety**: Zod validation (discriminated unions) and Regex escaping for keywords like `C++`.
+  Handled Prisma P2002 errors at the service level to allow multiple rule actions
 
 ## Setup
 
@@ -40,4 +42,6 @@ cd server && npm install && npm run dev
 ```bash
 cd client && npm install && npm run dev
 ```
+
+Note: If you are using Docker for PostgreSQL, ensure the container is running before starting the server.
 
